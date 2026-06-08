@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificador de Contraseñas Filtradas</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon.ico') }}" type="image/x-icon">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .password-container {
+            position: relative;
+        }
+        
+        input[type="password"], input[type="text"] {
+            width: 100%;
+            padding: 12px 40px 12px 12px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            user-select: none;
+            color: #666;
+        }
+        
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .result {
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+            animation: fadeIn 0.5s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .result.danger {
+            background: #fee;
+            border-left: 4px solid #e74c3c;
+        }
+        
+        .result.success {
+            background: #e8f5e9;
+            border-left: 4px solid #4caf50;
+        }
+        
+        .result-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+        
+        .result-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .result-message {
+            color: #555;
+            line-height: 1.5;
+        }
+        
+        .loader {
+            display: none;
+            margin-top: 20px;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .stats {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .warning-text {
+            color: #e74c3c;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Verificador de Contraseñas</h1>
+        <p class="subtitle">Comprueba si tu contraseña ha sido filtrada en alguna brecha de seguridad</p>
+        
+        <div class="input-group">
+            <label>Ingresa tu contraseña:</label>
+            <div class="password-container">
+                <input type="password" id="passwordInput" placeholder="Escribe tu contraseña aquí...">
+                <span class="toggle-password" onclick="togglePassword()">👁️</span>
+            </div>
+            <div class="warning-text">🔒 Tu contraseña nunca se guarda, solo se verifica localmente</div>
+        </div>
+        
+        <button onclick="checkPassword()">Verificar Contraseña</button>
+        
+        <div class="loader" id="loader">
+            <div class="spinner"></div>
+            <p style="margin-top: 10px;">Verificando en 9 GB de datos...</p>
+        </div>
+        
+        <div class="result" id="result"></div>
+        
+        <div class="stats">
+            📊 Base de datos: 9 GB de contraseñas filtradas<br>
+            🔍 Verificación local y privada
+        </div>
+    </div>
+    
+    <script>
+        function togglePassword() {
+            const input = document.getElementById('passwordInput');
+            const type = input.type === 'password' ? 'text' : 'password';
+            input.type = type;
+        }
+        
+        async function checkPassword() {
+            const passwordInput = document.getElementById('passwordInput');
+            const password = passwordInput.value;
+            
+            if (!password) {
+                alert('Por favor ingresa una contraseña');
+                return;
+            }
+            
+            // Mostrar loader
+            document.getElementById('loader').style.display = 'block';
+            document.getElementById('result').style.display = 'none';
+            const button = document.querySelector('button');
+            button.disabled = true;
+            
+            try {
+                const formData = new FormData();
+                formData.append('password', password);
+                
+                const response = await fetch('/check', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                displayResult(data);
+            } catch (error) {
+                console.error('Error:', error);
+                displayError('Error al conectar con el servidor');
+            } finally {
+                document.getElementById('loader').style.display = 'none';
+                button.disabled = false;
+            }
+        }
+        
+        function displayResult(data) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            
+            if (data.error) {
+                resultDiv.innerHTML = `
+                    <div class="result-icon">❌</div>
+                    <div class="result-title">Error</div>
+                    <div class="result-message">${data.error}</div>
+                `;
+                resultDiv.className = 'result danger';
+                return;
+            }
+            
+            if (data.breached) {
+                resultDiv.innerHTML = `
+                    <div class="result-icon">⚠️</div>
+                    <div class="result-title">¡Contraseña Comprometida!</div>
+                    <div class="result-message">
+                        Esta contraseña ha aparecido en filtraciones de datos.
+                        <br><br>
+                        <strong>¡Cámbiala inmediatamente!</strong><br>
+                        No la uses en ningún otro sitio.
+                    </div>
+                `;
+                resultDiv.className = 'result danger';
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="result-icon">✅</div>
+                    <div class="result-title">Contraseña Segura</div>
+                    <div class="result-message">
+                        ¡Buena noticia! Esta contraseña no aparece en nuestras bases de datos de filtraciones.
+                        <br><br>
+                        <small>Recuerda: Siempre usa contraseñas únicas para cada servicio.</small>
+                    </div>
+                `;
+                resultDiv.className = 'result success';
+            }
+        }
+        
+        function displayError(message) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `
+                <div class="result-icon">❌</div>
+                <div class="result-title">Error</div>
+                <div class="result-message">${message}</div>
+            `;
+            resultDiv.className = 'result danger';
+        }
+        
+        // Permitir verificar con Enter
+        document.getElementById('passwordInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                checkPassword();
+            }
+        });
+    </script>
+</body>
+</html>
