@@ -116,6 +116,8 @@ Get instant feedback:
 
 ❌ Compromised - Password appears in data breaches
 
+---
+
 > [!WARNING]
 > ## Disclaimer
 > This tool is intended for **educational and security awareness purposes only**.
@@ -148,7 +150,7 @@ For questions, bug reports, or suggestions, please contact: info@hackunderway.co
 
 # License
 - [x] TokIntel is licensed.
-- [x] See the [LICENSE](https://github.com/HackUnderway/TokIntel#MIT-1-ov-file) file for more information.
+- [x] See the [LICENSE](https://github.com/HackUnderway/password-checker?tab=MIT-1-ov-file#readme) file for more information.
 
 # 👨‍💻 Author
 
