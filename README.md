@@ -67,7 +67,6 @@ http://127.0.0.1:5000
 <p align="center">
   <img src="assets/Demo_04.png" title="TokIntel" alt="TokIntel" width="600"/>
 </p>
----
 
 ## 🗄️ Database Setup (Important)
 
